@@ -158,11 +158,12 @@ export class App {
 
     // Auto-scroll panels when follow is enabled
     if (this.followEnabled) {
+      const smooth = this.runDelay >= 1000;
       if (currentLine !== undefined) {
-        this.editor.scrollToLine(currentLine);
+        this.editor.scrollToLine(currentLine, smooth);
       }
       if (changed.size > 0) {
-        this.registersPanel.scrollToChanged(changed);
+        this.registersPanel.scrollToChanged(changed, smooth);
       }
     }
 

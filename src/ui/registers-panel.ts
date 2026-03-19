@@ -115,10 +115,10 @@ export class RegistersPanel {
     }
   }
 
-  scrollToChanged(changed: Set<number>): void {
+  scrollToChanged(changed: Set<number>, smooth = false): void {
     for (const idx of changed) {
       if (idx < this.rows.length) {
-        this.rows[idx].scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        this.rows[idx].scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
         break;
       }
     }

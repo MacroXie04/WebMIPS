@@ -233,12 +233,14 @@ export class Editor {
     this.updateLineNumbers();
   }
 
-  scrollToLine(line: number): void {
+  scrollToLine(line: number, smooth = false): void {
     const lineHeight = parseInt(getComputedStyle(this.textarea).lineHeight) || 21;
     const viewHeight = this.textarea.clientHeight;
     const targetScroll = Math.max(0, (line - 1) * lineHeight - viewHeight / 2 + lineHeight / 2);
-    this.textarea.scrollTop = targetScroll;
-    this.syncScroll();
+    const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
+    this.textarea.scrollTo({ top: targetScroll, behavior });
+    this.highlightEl.scrollTo({ top: targetScroll, behavior });
+    this.lineNumbers.scrollTo({ top: targetScroll, behavior });
   }
 
   clearHighlights(): void {
