@@ -7,6 +7,7 @@ import { ConsolePanel } from './console-panel.js';
 import { Toolbar } from './toolbar.js';
 import { StatusBar } from './status-bar.js';
 import { Settings } from './settings.js';
+import { PipelinePanel } from './pipeline-panel.js';
 
 export class App {
   private cpu!: CPU;
@@ -17,6 +18,7 @@ export class App {
   private toolbar!: Toolbar;
   private statusBar!: StatusBar;
   private settings!: Settings;
+  private pipelinePanel!: PipelinePanel;
   private errorBar!: HTMLElement;
 
   private assembled = false;
@@ -37,6 +39,7 @@ export class App {
     this.registersPanel = new RegistersPanel(document.getElementById('registers-panel')!);
     this.memoryPanel = new MemoryPanel(document.getElementById('memory-panel')!);
     this.consolePanel = new ConsolePanel(document.getElementById('console-panel')!);
+    this.pipelinePanel = new PipelinePanel(document.getElementById('pipeline-panel')!);
     this.statusBar = new StatusBar(document.getElementById('status-bar')!);
     this.errorBar = document.getElementById('error-bar')!;
 
@@ -87,6 +90,7 @@ export class App {
     this.assembled = true;
 
     this.consolePanel.clear();
+    this.editor.setReadOnly(true);
     this.updatePanels();
   }
 
@@ -124,6 +128,8 @@ export class App {
     this.consolePanel.hideInput();
     this.hideError();
     this.editor.clearHighlights();
+    this.assembled = false;
+    this.editor.setReadOnly(false);
 
     if (this.lastResult) {
       this.cpu.registers.reset();
@@ -131,10 +137,10 @@ export class App {
       this.cpu.loadProgram(this.lastResult);
     } else {
       this.cpu.reset();
-      this.assembled = false;
     }
 
     this.consolePanel.clear();
+    this.pipelinePanel.clear();
     this.updatePanels();
   }
 
@@ -151,6 +157,7 @@ export class App {
     this.statusBar.updatePC(this.cpu.registers.pc);
     this.statusBar.updateInstrCount(this.cpu.instrCount);
     this.memoryPanel.update();
+    this.pipelinePanel.update(this.cpu.lastInstruction, this.cpu.pipelineHistory);
 
     // Always highlight current line
     const currentLine = this.cpu.getCurrentLine();
@@ -175,6 +182,9 @@ export class App {
   private onStateChange(state: CpuState): void {
     this.toolbar.updateState(state);
     this.statusBar.updateState(state);
+
+    const isLocked = state === 'running' || state === 'waiting_input' || state === 'ready' || state === 'paused';
+    this.editor.setReadOnly(isLocked && this.assembled);
   }
 
   private showError(message: string, line?: number): void {

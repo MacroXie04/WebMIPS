@@ -41,7 +41,7 @@ export class ConsolePanel {
     this.inputField = document.createElement('input');
     this.inputField.type = 'text';
     this.inputField.placeholder = 'Enter value...';
-    this.inputField.style.cssText = 'flex:1;font-family:var(--font-mono);font-size:13px;padding:6px 8px;border:1px solid var(--md-sys-color-outline);border-radius:8px;background:var(--md-sys-color-surface);color:var(--md-sys-color-on-surface);outline:none;';
+    this.inputField.style.cssText = 'flex:1;font-family:var(--font-mono);font-size:12px;padding:3px 6px;border:1px solid var(--md-sys-color-outline);border-radius:4px;background:var(--md-sys-color-surface);color:var(--md-sys-color-on-surface);outline:none;height:24px;box-sizing:border-box;';
 
     this.inputField.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.submitInput();
@@ -49,6 +49,7 @@ export class ConsolePanel {
 
     const submitBtn = document.createElement('md-filled-button') as HTMLElement;
     submitBtn.textContent = 'Submit';
+    submitBtn.style.cssText = '--md-filled-button-container-shape: 4px; --md-filled-button-container-height: 24px; --md-filled-button-label-text-size: 11px; --md-filled-button-icon-size: 14px;';
     submitBtn.addEventListener('click', () => this.submitInput());
 
     this.inputArea.appendChild(this.inputField);

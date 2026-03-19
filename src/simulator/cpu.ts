@@ -2,8 +2,26 @@ import { RegisterFile } from './registers.js';
 import { Memory } from './memory.js';
 import { SyscallHandler, HaltException, InputRequestException, ConsoleOutputFn } from './syscalls.js';
 import { AssemblyResult } from '../assembler/assembler.js';
+import { REGISTER_NAMES } from '../utils/constants.js';
 
 export type CpuState = 'idle' | 'ready' | 'running' | 'paused' | 'halted' | 'waiting_input';
+
+export interface DecodedInstruction {
+  pc: number;
+  word: number;
+  name: string;
+  fullText: string;
+  opcode: number;
+  rs: number; rt: number; rd: number;
+  shamt: number; funct: number;
+  imm: number;
+  type: 'R' | 'I' | 'J';
+  isMemOp: boolean;
+  isStore: boolean;
+  memAddr?: number;
+  destReg?: number;
+  destValue?: number;
+}
 
 export interface CpuCallbacks {
   onConsoleOutput: ConsoleOutputFn;
@@ -20,6 +38,9 @@ export class CPU {
   state: CpuState = 'idle';
   instrCount = 0;
   sourceMap = new Map<number, number>();
+  lastInstruction: DecodedInstruction | null = null;
+  pipelineHistory: DecodedInstruction[] = [];
+  private static readonly MAX_HISTORY = 8;
 
   private runResolve: (() => void) | null = null;
   private pendingInput: InputRequestException | null = null;
@@ -42,6 +63,8 @@ export class CPU {
     this.memory.loadBytes(result.dataBase, result.dataSegment);
     this.sourceMap = result.sourceMap;
     this.instrCount = 0;
+    this.lastInstruction = null;
+    this.pipelineHistory = [];
     this.setState('ready');
   }
 
@@ -50,18 +73,31 @@ export class CPU {
 
     this.registers.snapshot();
 
+    const fetchPC = this.registers.pc;
+
     try {
       const word = this.memory.readWord(this.registers.pc);
       this.registers.pc = (this.registers.pc + 4) | 0;
       this.executeWord(word);
       this.instrCount++;
+
+      // Capture decoded instruction
+      this.lastInstruction = this.decodeForDisplay(fetchPC, word);
+      this.pushHistory(this.lastInstruction);
+
       return 'ok';
     } catch (e) {
       if (e instanceof HaltException) {
+        const word = this.memory.readWord(fetchPC);
+        this.lastInstruction = this.decodeForDisplay(fetchPC, word);
+        this.pushHistory(this.lastInstruction);
         this.setState('halted');
         return 'halted';
       }
       if (e instanceof InputRequestException) {
+        const word = this.memory.readWord(fetchPC);
+        this.lastInstruction = this.decodeForDisplay(fetchPC, word);
+        this.pushHistory(this.lastInstruction);
         this.pendingInput = e;
         this.instrCount++;
         this.setState('waiting_input');
@@ -70,6 +106,13 @@ export class CPU {
       this.setState('halted');
       this.callbacks.onConsoleOutput(`\n[Runtime error: ${e instanceof Error ? e.message : String(e)}]\n`);
       return 'error';
+    }
+  }
+
+  private pushHistory(instr: DecodedInstruction): void {
+    this.pipelineHistory.push(instr);
+    if (this.pipelineHistory.length > CPU.MAX_HISTORY) {
+      this.pipelineHistory.shift();
     }
   }
 
@@ -146,6 +189,8 @@ export class CPU {
     this.memory.reset();
     this.instrCount = 0;
     this.pendingInput = null;
+    this.lastInstruction = null;
+    this.pipelineHistory = [];
     this.sourceMap.clear();
     this.setState('idle');
   }
@@ -452,5 +497,107 @@ export class CPU {
       default:
         throw new Error(`Unknown REGIMM rt: 0x${rt.toString(16).padStart(2, '0')}`);
     }
+  }
+
+  private decodeForDisplay(pc: number, word: number): DecodedInstruction {
+    const opcode = (word >>> 26) & 0x3f;
+    const rs = (word >>> 21) & 0x1f;
+    const rt = (word >>> 16) & 0x1f;
+    const rd = (word >>> 11) & 0x1f;
+    const shamt = (word >>> 6) & 0x1f;
+    const funct = word & 0x3f;
+    const imm = this.signExtend16(word & 0xffff);
+    const uimm = word & 0xffff;
+    const target = word & 0x3ffffff;
+
+    const R = REGISTER_NAMES;
+    let name = '???';
+    let fullText = '???';
+    let type: 'R' | 'I' | 'J' = 'R';
+    let isMemOp = false;
+    let isStore = false;
+    let memAddr: number | undefined;
+    let destReg: number | undefined;
+    let destValue: number | undefined;
+
+    const changed = this.registers.getChanged();
+    // Find dest reg and value from changes
+    for (const idx of changed) {
+      if (idx < 32) { destReg = idx; destValue = this.registers.read(idx); break; }
+    }
+    if (changed.has(32)) { /* pc changed is normal */ }
+
+    if (opcode === 0) {
+      type = 'R';
+      const rNames: Record<number, string> = {
+        0x00:'sll',0x02:'srl',0x03:'sra',0x04:'sllv',0x06:'srlv',0x07:'srav',
+        0x08:'jr',0x09:'jalr',0x0c:'syscall',
+        0x10:'mfhi',0x11:'mthi',0x12:'mflo',0x13:'mtlo',
+        0x18:'mult',0x19:'multu',0x1a:'div',0x1b:'divu',
+        0x20:'add',0x21:'addu',0x22:'sub',0x23:'subu',
+        0x24:'and',0x25:'or',0x26:'xor',0x27:'nor',
+        0x2a:'slt',0x2b:'sltu',
+      };
+      name = rNames[funct] || `funct(0x${funct.toString(16)})`;
+
+      if (funct === 0x0c) { fullText = 'syscall'; }
+      else if (funct === 0x08) { fullText = `jr ${R[rs]}`; }
+      else if (funct === 0x09) { fullText = `jalr ${R[rd]}, ${R[rs]}`; }
+      else if (funct === 0x10) { fullText = `mfhi ${R[rd]}`; }
+      else if (funct === 0x12) { fullText = `mflo ${R[rd]}`; }
+      else if (funct === 0x11) { fullText = `mthi ${R[rs]}`; }
+      else if (funct === 0x13) { fullText = `mtlo ${R[rs]}`; }
+      else if (funct === 0x18 || funct === 0x19) { fullText = `${name} ${R[rs]}, ${R[rt]}`; }
+      else if (funct === 0x1a || funct === 0x1b) { fullText = `${name} ${R[rs]}, ${R[rt]}`; }
+      else if (funct <= 0x03) { fullText = `${name} ${R[rd]}, ${R[rt]}, ${shamt}`; }
+      else if (funct <= 0x07) { fullText = `${name} ${R[rd]}, ${R[rt]}, ${R[rs]}`; }
+      else { fullText = `${name} ${R[rd]}, ${R[rs]}, ${R[rt]}`; }
+    } else if (opcode === 0x01) {
+      type = 'I';
+      name = rt === 0 ? 'bltz' : 'bgez';
+      fullText = `${name} ${R[rs]}, ${imm}`;
+    } else if (opcode === 0x02 || opcode === 0x03) {
+      type = 'J';
+      name = opcode === 0x02 ? 'j' : 'jal';
+      fullText = `${name} 0x${(target << 2).toString(16)}`;
+      if (opcode === 0x03) { destReg = 31; destValue = this.registers.read(31); }
+    } else {
+      type = 'I';
+      const iNames: Record<number, string> = {
+        0x04:'beq',0x05:'bne',0x06:'blez',0x07:'bgtz',
+        0x08:'addi',0x09:'addiu',0x0a:'slti',0x0b:'sltiu',
+        0x0c:'andi',0x0d:'ori',0x0e:'xori',0x0f:'lui',
+        0x20:'lb',0x21:'lh',0x23:'lw',0x24:'lbu',0x25:'lhu',
+        0x28:'sb',0x29:'sh',0x2b:'sw',
+      };
+      name = iNames[opcode] || `op(0x${opcode.toString(16)})`;
+
+      const loadOps = new Set([0x20,0x21,0x23,0x24,0x25]);
+      const storeOps = new Set([0x28,0x29,0x2b]);
+      isMemOp = loadOps.has(opcode) || storeOps.has(opcode);
+      isStore = storeOps.has(opcode);
+
+      if (isMemOp) {
+        memAddr = (this.registers.read(rs) + imm) | 0;
+        // For loads, note we use the pre-exec rs value is still in snapshot
+        fullText = `${name} ${R[rt]}, ${imm}(${R[rs]})`;
+      } else if (opcode === 0x0f) {
+        fullText = `lui ${R[rt]}, 0x${uimm.toString(16)}`;
+      } else if (opcode >= 0x04 && opcode <= 0x07) {
+        if (opcode === 0x04 || opcode === 0x05) {
+          fullText = `${name} ${R[rs]}, ${R[rt]}, ${imm}`;
+        } else {
+          fullText = `${name} ${R[rs]}, ${imm}`;
+        }
+      } else {
+        fullText = `${name} ${R[rt]}, ${R[rs]}, ${imm}`;
+      }
+    }
+
+    if (isMemOp && memAddr !== undefined) {
+      if (!isStore) { destReg = rt; destValue = this.registers.read(rt); }
+    }
+
+    return { pc, word, name, fullText, opcode, rs, rt, rd, shamt, funct, imm, type, isMemOp, isStore, memAddr, destReg, destValue };
   }
 }

@@ -16,3 +16,21 @@ import { initResizers } from './ui/resizer.js';
 const app = new App();
 app.init();
 initResizers();
+
+// Add collapse functionality to right-side panels
+document.querySelectorAll('#right-panels > .panel').forEach(panel => {
+  const header = panel.querySelector('.panel-header');
+  if (!header) return;
+
+  // Add collapse chevron
+  const chevron = document.createElement('span');
+  chevron.className = 'collapse-icon material-symbols-outlined';
+  chevron.textContent = 'expand_more';
+  header.insertBefore(chevron, header.firstChild);
+
+  // Click header to toggle collapse (but not when clicking action buttons)
+  header.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.panel-actions')) return;
+    panel.classList.toggle('collapsed');
+  });
+});

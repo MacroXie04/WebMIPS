@@ -116,10 +116,32 @@ export class RegistersPanel {
   }
 
   scrollToChanged(changed: Set<number>, smooth = false): void {
-    for (const idx of changed) {
-      if (idx < this.rows.length) {
-        this.rows[idx].scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
-        break;
+    if (changed.size === 0) return;
+
+    // Prefer scrolling to the first changed GP register (0-31)
+    // Only scroll to pc/hi/lo (32-34) if no GP register changed
+    let target = -1;
+    for (let i = 0; i <= 31; i++) {
+      if (changed.has(i)) { target = i; break; }
+    }
+    if (target === -1) {
+      for (const idx of changed) {
+        if (idx < this.rows.length) { target = idx; break; }
+      }
+    }
+
+    if (target >= 0 && target < this.rows.length) {
+      const container = this.rows[target].closest('.register-table-container');
+      if (container && smooth) {
+        // Manual scroll to center the target row, avoids smooth animation interruption issues
+        const row = this.rows[target];
+        const rowTop = row.offsetTop;
+        const rowHeight = row.offsetHeight;
+        const containerHeight = container.clientHeight;
+        const scrollTarget = rowTop - containerHeight / 2 + rowHeight / 2;
+        container.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+      } else {
+        this.rows[target].scrollIntoView({ block: 'nearest' });
       }
     }
   }

@@ -26,6 +26,14 @@ export class StatusBar {
     const spacer = document.createElement('span');
     spacer.className = 'spacer';
 
+    const tagline = document.createElement('span');
+    tagline.textContent = 'Simulated in TypeScript. No silicon involved.';
+    tagline.style.color = '#e53935';
+    tagline.style.opacity = '0.8';
+
+    const spacer2 = document.createElement('span');
+    spacer2.className = 'spacer';
+
     const version = document.createElement('span');
     version.textContent = 'MIPS32';
 
@@ -34,6 +42,8 @@ export class StatusBar {
     container.appendChild(this.pcText);
     container.appendChild(this.instrText);
     container.appendChild(spacer);
+    container.appendChild(tagline);
+    container.appendChild(spacer2);
     container.appendChild(version);
   }
 

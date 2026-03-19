@@ -174,6 +174,11 @@ export class Editor {
     return this.textarea.value;
   }
 
+  setReadOnly(readOnly: boolean): void {
+    this.textarea.readOnly = readOnly;
+    this.textarea.style.opacity = readOnly ? '0.7' : '1';
+  }
+
   setValue(code: string): void {
     this.textarea.value = code;
     this.onInput();
