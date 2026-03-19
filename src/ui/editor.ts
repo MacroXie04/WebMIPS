@@ -1,50 +1,6 @@
-const DEFAULT_PROGRAM = `# Mercury — MIPS Simulator
-# Fibonacci sequence: prints first 19 Fibonacci numbers
-.data
-fibs:  .word 0 : 19      # array of 19 words
-size:  .word 19           # size of array
-space: .asciiz " "        # space separator
-head:  .asciiz "The Fibonacci numbers are:\\n"
+const STORAGE_KEY = 'webmips-editor-content';
 
-.text
-      la   $a0, head       # print header string
-      li   $v0, 4
-      syscall
-
-      la   $s0, fibs       # $s0 = base address of fibs array
-      la   $s5, size       # $s5 = address of size
-      lw   $s5, 0($s5)     # $s5 = size value
-
-      li   $s2, 1          # $s2 = 1 (first Fibonacci number)
-      sw   $s2, 0($s0)     # fibs[0] = 1
-      sw   $s2, 4($s0)     # fibs[1] = 1
-
-      addi $s1, $s5, -2    # $s1 = loop counter (size - 2)
-      addi $s0, $s0, 8     # $s0 = &fibs[2]
-loop: lw   $s3, -8($s0)    # $s3 = fibs[i-2]
-      lw   $s4, -4($s0)    # $s4 = fibs[i-1]
-      add  $s2, $s3, $s4   # $s2 = fibs[i-2] + fibs[i-1]
-      sw   $s2, 0($s0)     # fibs[i] = $s2
-      addi $s0, $s0, 4     # advance pointer
-      addi $s1, $s1, -1    # decrement counter
-      bgtz $s1, loop       # loop if counter > 0
-
-      # Print the array
-      la   $s0, fibs       # reset to base
-      move $s1, $s5        # counter = size
-print:lw   $a0, 0($s0)     # load fibs[i]
-      li   $v0, 1          # print integer
-      syscall
-      la   $a0, space      # print space
-      li   $v0, 4
-      syscall
-      addi $s0, $s0, 4     # advance pointer
-      addi $s1, $s1, -1    # decrement counter
-      bgtz $s1, print      # loop if counter > 0
-
-      li   $v0, 10         # exit
-      syscall
-`;
+const DEFAULT_PROGRAM = ``;
 
 const INSTRUCTIONS = new Set([
   'add','addu','sub','subu','and','or','xor','nor','slt','sltu',
@@ -208,8 +164,9 @@ export class Editor {
     this.textarea.addEventListener('scroll', () => this.syncScroll());
     this.textarea.addEventListener('keydown', (e) => this.handleKeyDown(e));
 
-    // Load default program
-    this.textarea.value = DEFAULT_PROGRAM;
+    // Load saved content or default
+    const saved = localStorage.getItem(STORAGE_KEY);
+    this.textarea.value = saved !== null ? saved : DEFAULT_PROGRAM;
     this.onInput();
   }
 
@@ -252,6 +209,7 @@ export class Editor {
   private onInput(): void {
     this.updateHighlight();
     this.updateLineNumbers();
+    localStorage.setItem(STORAGE_KEY, this.textarea.value);
   }
 
   private updateHighlight(): void {
