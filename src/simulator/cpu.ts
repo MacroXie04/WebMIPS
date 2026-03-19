@@ -196,6 +196,11 @@ export class CPU {
   }
 
   getCurrentLine(): number | undefined {
+    // Use the PC of the last executed instruction, not the current PC
+    // (which already points to the next instruction)
+    if (this.lastInstruction) {
+      return this.sourceMap.get(this.lastInstruction.pc);
+    }
     return this.sourceMap.get(this.registers.pc);
   }
 

@@ -366,7 +366,7 @@ body.resizing-v .resize-handle {
 
 /* Memory Panel */
 .memory-panel {
-  height: 200px;
+  flex: 1;
   min-height: 80px;
   display: flex;
   flex-direction: column;
@@ -405,7 +405,7 @@ body.resizing-v .resize-handle {
 
 /* Console Panel */
 .console-panel {
-  flex: 0 0 180px;
+  flex: 1;
   min-height: 80px;
   display: flex;
   flex-direction: column;

@@ -129,7 +129,6 @@ export class App {
     this.hideError();
     this.editor.clearHighlights();
     this.assembled = false;
-    this.editor.setReadOnly(false);
 
     if (this.lastResult) {
       this.cpu.registers.reset();
@@ -138,6 +137,12 @@ export class App {
     } else {
       this.cpu.reset();
     }
+
+    // Override state to idle — user must re-assemble to run
+    this.cpu.state = 'idle';
+    this.toolbar.updateState('idle');
+    this.statusBar.updateState('idle');
+    this.editor.setReadOnly(false);
 
     this.consolePanel.clear();
     this.pipelinePanel.clear();

@@ -31,6 +31,13 @@ document.querySelectorAll('#right-panels > .panel').forEach(panel => {
   // Click header to toggle collapse (but not when clicking action buttons)
   header.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('.panel-actions')) return;
-    panel.classList.toggle('collapsed');
+    const el = panel as HTMLElement;
+    el.classList.toggle('collapsed');
+
+    // When expanding, reset inline styles so flex: 1 from CSS takes effect
+    if (!el.classList.contains('collapsed')) {
+      el.style.flex = '';
+      el.style.height = '';
+    }
   });
 });
