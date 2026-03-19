@@ -323,7 +323,7 @@ body.resizing-v .resize-handle {
 /* Registers Panel */
 .registers-panel {
   flex: 1;
-  min-height: 80px;
+  min-height: 28px;
   display: flex;
   flex-direction: column;
 }
@@ -367,7 +367,7 @@ body.resizing-v .resize-handle {
 /* Memory Panel */
 .memory-panel {
   flex: 1;
-  min-height: 80px;
+  min-height: 28px;
   display: flex;
   flex-direction: column;
 }
@@ -406,7 +406,7 @@ body.resizing-v .resize-handle {
 /* Console Panel */
 .console-panel {
   flex: 1;
-  min-height: 80px;
+  min-height: 28px;
   display: flex;
   flex-direction: column;
 }
@@ -447,7 +447,7 @@ body.resizing-v .resize-handle {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-height: 80px;
+  min-height: 28px;
 }
 
 .pipeline-content {

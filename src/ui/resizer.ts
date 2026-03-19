@@ -158,7 +158,7 @@ function setupVerticalResize(
     const onMove = (e: MouseEvent) => {
       const dy = e.clientY - startY;
       const totalHeight = startTopHeight + startBottomHeight;
-      const newTopHeight = Math.max(80, Math.min(totalHeight - 80, startTopHeight + dy));
+      const newTopHeight = Math.max(28, Math.min(totalHeight - 28, startTopHeight + dy));
       const newBottomHeight = totalHeight - newTopHeight;
 
       top.style.flex = 'none';
