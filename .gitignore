@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Vite build output
+dist/
+
+# Coverage / test output
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Vite cache
+.vite/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Misc OS / editor files
+.DS_Store
+
+# Claude / other local tooling
+.claude/
+
+# Editor settings (keep team-consistent defaults)
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

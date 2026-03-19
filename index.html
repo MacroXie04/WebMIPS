@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebMIPS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/main.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Toolbar -->
+    <header class="toolbar" id="toolbar"></header>
+
+    <!-- Error bar -->
+    <div class="error-bar" id="error-bar" hidden></div>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- Left: Editor -->
+      <section class="panel editor-panel" id="editor-panel"></section>
+
+      <!-- Vertical resize handle: editor ↔ right panels -->
+      <div class="resize-handle resize-handle-h" id="resize-main"></div>
+
+      <!-- Right: stacked panels -->
+      <aside class="right-panels" id="right-panels">
+        <section class="panel registers-panel" id="registers-panel"></section>
+        <div class="resize-handle resize-handle-v" id="resize-reg-mem"></div>
+        <section class="panel memory-panel" id="memory-panel"></section>
+        <div class="resize-handle resize-handle-v" id="resize-mem-con"></div>
+        <section class="panel console-panel" id="console-panel"></section>
+      </aside>
+    </main>
+
+    <!-- Status bar -->
+    <footer class="status-bar" id="status-bar"></footer>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
